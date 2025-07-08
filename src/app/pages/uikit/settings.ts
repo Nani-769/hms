@@ -64,7 +64,7 @@ interface Patient {
     providers: [ProductService],
     template: `<div class="card">
             <p-tabs value="0">
-                <p-tablist>
+                <p-tablist style="overflow:auto">
                     <p-tab value="0">Manage Permissions</p-tab>
                     <p-tab value="1">Manage Users</p-tab>
                     <p-tab value="2">Manage Employees</p-tab>
@@ -565,7 +565,8 @@ export class settings implements OnInit {
         { label: 'Deleted', value: 'Deleted' }
     ];
 
-    async ngOnInit() {
+    async ngOnInit()
+     {
         this.dropDownLoad = true;
         let usersOptns: any = await this.loginSerivce.getAllUsers();
         if (usersOptns.status == 200) {
@@ -580,7 +581,8 @@ export class settings implements OnInit {
         this.getAllDocs.forEach((ele: any) => (ele.isDoc = false));
     }
 
-    isFormDisabled(): boolean {
+    isFormDisabled(): boolean 
+    {
         return !(
             false
             // this.firstname &&
@@ -732,16 +734,22 @@ export class settings implements OnInit {
         }
     }
 
-    showDialogDept(mode: string) {
+    showDialogDept(mode: string)
+     {
         this.isDepvisible = true;
         this.mode = mode;
     }
 
     public isdepSucess = false;
-    async saveDepartment() {
+    async saveDepartment()
+     {
         this.isdepSucess = true;
-        if (this.mode == 'add') {
-        } else {
+        if (this.mode == 'add') 
+            
+        {
+        }
+         else
+          {
         }
         this.departmentName['name'] = this.departmentName['name'].trim();
         const depSaveEdit = await this.loginSerivce.saveDepartment(this.departmentName);
