@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
@@ -23,6 +23,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MessageModule } from 'primeng/message';
 import { DialogModule } from 'primeng/dialog';
 import { KeyFilterModule } from 'primeng/keyfilter';
+// import tippy from 'tippy.js';    
+import { NgxTippyModule } from 'ngx-tippy-wrapper';
 interface State {
     name: string;
     code: string;
@@ -45,6 +47,7 @@ interface Patient {
         InputTextModule,
         ChipModule,
         FluidModule,
+        NgxTippyModule,
         ButtonModule,
         SelectModule,
         FormsModule,
@@ -340,7 +343,7 @@ interface Patient {
                     </p-tabpanel>
                     <p-tabpanel value="3">
                         <!--settings_mng_roles -->
-                        <p-button (click)="showDialogRoles('add'); roleName['name'] = null; roleName['id'] = null" icon="pi pi-plus-circle" label="Add Role" severity="secondary" styleClass="min-w-40" />
+                        <p-button   (click)="showDialogRoles('add');  roleName['name'] = null; roleName['id'] = null" icon="pi pi-plus-circle" label="Add Role" severity="secondary" styleClass="min-w-40" />
                         <div class="main-card mt-2">
                             <div class="grid">
                                 <div class="col-6 col-offset-4">
@@ -351,8 +354,9 @@ interface Patient {
                                                     <div class="font-light text-gray-700">Role</div>
                                                 </ng-template>
                                                 <div style="width: 300px;">
-                                                    <div class="flex flex-row cursor-pointer" (click)="showDialogRoles('edit'); roleName['name'] = rls.name; roleName['id'] = rls.id">
-                                                        <div class="font-bold text-green-600 ml-2">
+                                                    <div class="flex flex-row cursor-pointer" 
+                                                    (click)="showDialogRoles('edit'); roleName['name'] = rls.name; roleName['id'] = rls.id">
+                                                        <div class="font-bold text-green-600 ml-2" [ngxTippy]="'Edit ' + rls.name ">
                                                             {{ rls.name }}
                                                         </div>
                                                     </div>
@@ -378,7 +382,7 @@ interface Patient {
                                                 </ng-template>
                                                 <div style="width: 300px;">
                                                     <div class="flex flex-row cursor-pointer" (click)="showDialogDesig('edit'); designationName['name'] = desigs.name; designationName['id'] = desigs.designation_id">
-                                                        <div class="font-bold text-green-600 ml-2">
+                                                        <div class="font-bold text-green-600 ml-2" [ngxTippy]="'Edit ' + desigs.name ">
                                                             {{ desigs.name }}
                                                         </div>
                                                     </div>
@@ -404,7 +408,7 @@ interface Patient {
                                                 </ng-template>
                                                 <div style="width: 300px;">
                                                     <div class="flex flex-row cursor-pointer" (click)="showDialogDept('edit'); departmentName['name'] = deps.name; departmentName['id'] = deps.depsrtment_id">
-                                                        <div class="font-bold text-green-600 ml-2">
+                                                        <div class="font-bold text-green-600 ml-2" [ngxTippy]="'Edit ' + deps.name ">
                                                             {{ deps.name }}
                                                         </div>
                                                     </div>
@@ -430,7 +434,7 @@ interface Patient {
                                                 </ng-template>
                                                 <div style="width: 300px;">
                                                     <div class="flex flex-row cursor-pointer" (click)="showDialog('edit'); myDocName['myDocName'] = document.docname; myDocName['docid'] = document.docid">
-                                                        <div class="font-bold text-green-600 ml-2">
+                                                        <div class="font-bold text-green-600 ml-2" [ngxTippy]="'Edit ' + document.name ">
                                                             {{ document.docname }}
                                                         </div>
                                                     </div>
@@ -533,7 +537,8 @@ interface Patient {
             }
         </style> `
 })
-export class settings implements OnInit {
+export class settings implements OnInit, AfterViewInit {
+    // @ViewChild('tooltipBtn', { static: false }) tooltipBtn!: ElementRef<HTMLButtonElement>;
     public _productService = inject(ProductService);
     public loginSerivce = inject(LoginserviceService);
     public usersDropDownInfo: any = [];
@@ -565,8 +570,7 @@ export class settings implements OnInit {
         { label: 'Deleted', value: 'Deleted' }
     ];
 
-    async ngOnInit()
-     {
+    async ngOnInit() {
         this.dropDownLoad = true;
         let usersOptns: any = await this.loginSerivce.getAllUsers();
         if (usersOptns.status == 200) {
@@ -581,8 +585,17 @@ export class settings implements OnInit {
         this.getAllDocs.forEach((ele: any) => (ele.isDoc = false));
     }
 
-    isFormDisabled(): boolean 
-    {
+    ngAfterViewInit() {
+        // if (this.tooltipBtn) {
+        //     console.log("test ",this.tooltipBtn)
+        //     tippy(this.tooltipBtn.nativeElement, {
+        //         content: 'I am a Tippy tooltip!',
+        //         placement: 'top',
+        //     });
+        // };
+    }
+
+    isFormDisabled(): boolean {
         return !(
             false
             // this.firstname &&
@@ -734,22 +747,17 @@ export class settings implements OnInit {
         }
     }
 
-    showDialogDept(mode: string)
-     {
+    showDialogDept(mode: string) {
         this.isDepvisible = true;
         this.mode = mode;
     }
 
     public isdepSucess = false;
-    async saveDepartment()
-     {
+    async saveDepartment() {
         this.isdepSucess = true;
-        if (this.mode == 'add') 
-            
-        {
+        if (this.mode == 'add') {
         }
-         else
-          {
+        else {
         }
         this.departmentName['name'] = this.departmentName['name'].trim();
         const depSaveEdit = await this.loginSerivce.saveDepartment(this.departmentName);

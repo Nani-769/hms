@@ -196,6 +196,14 @@ export class LoginserviceService {
         return getData;
     }
 
+    async getPatientsByDatesorNonDates(dateParams: any) {
+        let getData = null;
+        let { data, error } = await this.supabase.rpc('get_patients_by_date_range', { from_date: null, to_date: null });
+        if (error) getData = error;
+        else getData = data;
+        return getData;
+    }
+
     async getAllUsers() {
         return await this.supabase.from('users').select('id,username');
     }
