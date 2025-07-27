@@ -16,9 +16,14 @@ import { TableDemo } from './tabledemo';
 // import { MenuDemo } from './menudemo';
 import { Inventory } from './inventory';
 import { settings } from './settings';
+import { AppointmentCreationComponent } from './appointment';
+import { Billing } from './billing';
 
+//  data: { breadcrumb: 'Form Layout' },
 export default [
     { path: 'registration', data: { breadcrumb: 'Form Layout' }, component: FormLayoutDemo },
+    { path: 'appointment', component: AppointmentCreationComponent },
+    { path: 'billing', component: Billing },
     // { path: 'ip-admissions', data: { breadcrumb: 'Input' }, component: InputDemo },
     { path: 'employeelist', data: { breadcrumb: 'List' }, component: ListDemo },
     { path: 'inventory', data: { breadcrumb: 'Inventory' }, component: Inventory },
