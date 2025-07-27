@@ -15,6 +15,8 @@ import { TagModule } from 'primeng/tag';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipModule } from 'primeng/chip';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { CardModule } from 'primeng/card';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NameInitialsPipe } from '../../name-initials.pipe';
 import { LoginserviceService } from '../service/loginservice.service';
 import { ProductService } from '../service/product.service';
@@ -27,12 +29,39 @@ interface BillItem {
 }
 
 @Component({
-    selector: 'app-Billing',
+    selector: 'app-billing',
     standalone: true,
-    imports: [CommonModule, InputTextModule, ChipModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, NameInitialsPipe, RadioButtonModule, SelectButtonModule, CalendarModule, InputMaskModule, TableModule, TabsModule, TagModule, InputNumberModule],
+    imports: [CommonModule, InputTextModule, ChipModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, NameInitialsPipe, RadioButtonModule, SelectButtonModule, CalendarModule, InputMaskModule, TableModule, TabsModule, TagModule, InputNumberModule, CardModule],
     providers: [ProductService],
     template: `<div class="card">
-        <p-tabs value="0">
+        <!-- Header with Back Navigation -->
+        <div class="billing-header mb-4" *ngIf="isNavigatedFromAppointment">
+            <div class="flex justify-content-between align-items-center">
+                <div class="flex align-items-center">
+                    <button pButton icon="pi pi-arrow-left" class="p-button-text p-button-plain mr-3" 
+                            (click)="goBack()" title="Back to Appointments"></button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-primary mb-0">Patient Billing</h2>
+                        <p class="text-color-secondary mt-1 mb-0">Generate bill for {{ appointmentData?.patientName }}</p>
+                    </div>
+                </div>
+                <div class="patient-quick-info" *ngIf="appointmentData">
+                    <p-card class="p-2">
+                        <div class="flex align-items-center">
+                            <span class="bg-primary text-primary-contrast rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold mr-3">
+                                {{ appointmentData.patientName | nameInitials }}
+                            </span>
+                            <div>
+                                <div class="font-semibold">{{ appointmentData.patientName }}</div>
+                                <div class="text-sm text-color-secondary">{{ appointmentData.department }} • {{ appointmentData.doctor }}</div>
+                            </div>
+                        </div>
+                    </p-card>
+                </div>
+            </div>
+        </div>
+
+        <p-tabs [value]="isNavigatedFromAppointment ? '1' : '0'">
             <p-tablist>
                 <p-tab value="0">Bills & Payments</p-tab>
                 <p-tab value="1">Create Bill</p-tab>
@@ -143,7 +172,7 @@ interface BillItem {
                                 <div class="flex flex-col md:flex-row gap-6">
                                     <div class="flex flex-wrap gap-2 w-full">
                                         <label for="patient">Patient</label>
-                                        <p-select id="patient" [(ngModel)]="selectedPatient" [options]="patients" optionLabel="name" placeholder="Select Patient" class="w-full"></p-select>
+                                        <p-select id="patient" [(ngModel)]="selectedPatient" [options]="patients" optionLabel="name" placeholder="Select Patient" class="w-full" [disabled]="isNavigatedFromAppointment"></p-select>
                                     </div>
                                     <div class="flex flex-wrap gap-2 w-full">
                                         <label for="billDate">Bill Date</label>
@@ -174,11 +203,11 @@ interface BillItem {
                                 <div class="flex flex-col md:flex-row gap-6">
                                     <div class="flex flex-wrap gap-2 w-full">
                                         <label for="department">Department</label>
-                                        <p-select id="department" [(ngModel)]="department" [options]="departments" placeholder="Select Department" class="w-full"></p-select>
+                                        <p-select id="department" [(ngModel)]="department" [options]="departments" placeholder="Select Department" class="w-full" [disabled]="isNavigatedFromAppointment"></p-select>
                                     </div>
                                     <div class="flex flex-wrap gap-2 w-full">
                                         <label for="doctor">Doctor</label>
-                                        <p-select id="doctor" [(ngModel)]="doctor" [options]="doctors" placeholder="Select Doctor" class="w-full"></p-select>
+                                        <p-select id="doctor" [(ngModel)]="doctor" [options]="doctors" placeholder="Select Doctor" class="w-full" [disabled]="isNavigatedFromAppointment"></p-select>
                                     </div>
                                 </div>
 
@@ -274,9 +303,18 @@ interface BillItem {
                                 </div>
 
                                 <div class="flex gap-4 justify-content-between">
-                                    <button pButton label="Generate Bill" class="p-button-sm" (click)="generateBill()" [disabled]="isFormDisabled()"></button>
-                                    <button pButton label="Save Draft" class="p-button-sm p-button-secondary" (click)="saveDraft()"></button>
-                                    <button pButton label="Cancel" (click)="cancel()" class="p-button-sm p-button-secondary ml-2"></button>
+                                    <div class="flex gap-2">
+                                        <button pButton label="Generate Bill" class="p-button-sm" (click)="generateBill()" [disabled]="isFormDisabled()"></button>
+                                        <button pButton label="Save Draft" class="p-button-sm p-button-secondary" (click)="saveDraft()"></button>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button pButton label="Cancel" (click)="cancel()" class="p-button-sm p-button-secondary"></button>
+                                        <button pButton label="Proceed to Assessment" class="p-button-sm p-button-success" 
+                                               (click)="proceedToAssessment()" 
+                                               [disabled]="paymentStatus !== 'Paid'" 
+                                               *ngIf="isNavigatedFromAppointment">
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -284,11 +322,28 @@ interface BillItem {
                 </p-tabpanel>
             </p-tabpanels>
         </p-tabs>
-    </div>`
+    </div>`,
+    styles: [`
+        .billing-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .patient-quick-info {
+            min-width: 250px;
+        }
+    `]
 })
-export class Billing implements OnInit {
+export class BillingComponent implements OnInit {
     public _productService = inject(ProductService);
     public loginService = inject(LoginserviceService);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
+
+    // Navigation state
+    isNavigatedFromAppointment: boolean = false;
+    appointmentData: any = null;
 
     paymentStatusOptions: any[] = [
         { label: 'All', value: 'all' },
@@ -336,9 +391,83 @@ export class Billing implements OnInit {
 
     public filteredBills: any;
 
+    async ngOnInit() {
+        // Check if navigated from appointment
+        this.route.queryParams.subscribe(params => {
+            if (params['from'] === 'appointment') {
+                this.isNavigatedFromAppointment = true;
+                this.appointmentData = {
+                    appointmentId: params['appointmentId'],
+                    patientName: params['patientName'],  
+                    patientId: params['patientId'],
+                    department: params['department'],
+                    doctor: params['doctor'],
+                    appointmentDate: params['appointmentDate']
+                };
+                
+                // Pre-fill form with appointment data
+                this.prefillFormWithAppointmentData();
+            }
+        });
+
+        // Load sample bills
+        const sampleBills = [
+            {
+                patientName: 'John Doe',
+                billDate: new Date('2024-01-15'),
+                billNumber: 'BILL-1001',
+                billType: 'OP',
+                department: 'Cardiology',
+                doctor: 'Dr. Smith',
+                totalAmount: 1500,
+                paidAmount: 1500,
+                paymentStatus: 'Paid',
+                paymentMethod: 'Card'
+            },
+            {
+                patientName: 'Jane Smith',
+                billDate: new Date('2024-01-16'),
+                billNumber: 'BILL-1002',
+                billType: 'IP',
+                department: 'Neurology',
+                doctor: 'Dr. Johnson',
+                totalAmount: 5000,
+                paidAmount: 2500,
+                paymentStatus: 'Partial',
+                paymentMethod: 'Insurance'
+            }
+        ];
+        
+        this.bills = sampleBills;
+        this.filteredBills = JSON.stringify(this.bills);
+    }
+
+    prefillFormWithAppointmentData(): void {
+        if (this.appointmentData) {
+            // Find and set patient
+            this.selectedPatient = this.patients.find(p => p.name === this.appointmentData.patientName);
+            
+            // Set department and doctor
+            this.department = this.appointmentData.department;
+            this.doctor = this.appointmentData.doctor;
+            
+            // Add default consultation service
+            this.billItems = [{ 
+                serviceName: 'Consultation', 
+                quantity: 1, 
+                unitPrice: 150, 
+                total: 150 
+            }];
+            
+            this.calculateFinalAmount();
+        }
+    }
+
     generateBill(): void {
         const newBill = {
-            patientName: this.selectedPatient?.name || '',
+            patientName: this.selectedPatient?.name || this.appointmentData?.patientName || '',
+            patientId: this.appointmentData?.patientId || '',
+            appointmentId: this.appointmentData?.appointmentId || '',
             billDate: this.billDate,
             billNumber: this.billNumber,
             billType: this.billType,
@@ -348,13 +477,46 @@ export class Billing implements OnInit {
             paidAmount: this.paidAmount,
             paymentStatus: this.paymentStatus,
             paymentMethod: this.paymentMethod,
-            notes: this.notes
+            notes: this.notes,
+            billItems: this.billItems
         };
         
         this.bills.push(newBill);
         this.filteredBills = JSON.stringify(this.bills);
-        alert('Bill generated successfully!');
-        this.resetForm();
+        
+        // If navigated from appointment and bill is paid, show success message
+        if (this.isNavigatedFromAppointment && this.paymentStatus === 'Paid') {
+            alert('Bill generated and payment completed successfully! You can now proceed to assessment.');
+        } else {
+            alert('Bill generated successfully!');
+        }
+        
+        if (!this.isNavigatedFromAppointment) {
+            this.resetForm();
+        }
+    }
+
+    proceedToAssessment(): void {
+        if (this.paymentStatus === 'Paid' && this.appointmentData) {
+            this.router.navigate(['/home/hms/assessment'], {
+                queryParams: {
+                    from: 'billing',
+                    appointmentId: this.appointmentData.appointmentId,
+                    patientName: this.appointmentData.patientName,
+                    patientId: this.appointmentData.patientId,
+                    department: this.appointmentData.department,
+                    doctor: this.appointmentData.doctor,
+                    billNumber: this.billNumber,
+                    paidAmount: this.paidAmount
+                }
+            });
+        } else {
+            alert('Payment must be completed before proceeding to assessment!');
+        }
+    }
+
+    goBack(): void {
+        this.router.navigate(['/home/hms/appointment']);
     }
 
     saveDraft(): void {
@@ -362,7 +524,11 @@ export class Billing implements OnInit {
     }
 
     cancel(): void {
-        this.resetForm();
+        if (this.isNavigatedFromAppointment) {
+            this.goBack();
+        } else {
+            this.resetForm();
+        }
     }
 
     resetForm(): void {
@@ -430,45 +596,12 @@ export class Billing implements OnInit {
 
     isFormDisabled(): boolean {
         return !(
-            this.selectedPatient &&
+            (this.selectedPatient || this.appointmentData) &&
             this.billDate &&
             this.department &&
             this.doctor &&
             this.billItems.length > 0 &&
             this.billItems.every(item => item.serviceName && item.quantity > 0 && item.unitPrice > 0)
         );
-    }
-
-    async ngOnInit() {
-        // Static sample data
-        const sampleBills = [
-            {
-                patientName: 'John Doe',
-                billDate: new Date('2024-01-15'),
-                billNumber: 'BILL-1001',
-                billType: 'OP',
-                department: 'Cardiology',
-                doctor: 'Dr. Smith',
-                totalAmount: 1500,
-                paidAmount: 1500,
-                paymentStatus: 'Paid',
-                paymentMethod: 'Card'
-            },
-            {
-                patientName: 'Jane Smith',
-                billDate: new Date('2024-01-16'),
-                billNumber: 'BILL-1002',
-                billType: 'IP',
-                department: 'Neurology',
-                doctor: 'Dr. Johnson',
-                totalAmount: 5000,
-                paidAmount: 2500,
-                paymentStatus: 'Partial',
-                paymentMethod: 'Insurance'
-            }
-        ];
-        
-        this.bills = sampleBills;
-        this.filteredBills = JSON.stringify(this.bills);
     }
 }

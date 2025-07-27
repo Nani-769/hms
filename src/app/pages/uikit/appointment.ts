@@ -14,26 +14,34 @@ import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipModule } from 'primeng/chip';
-import { DialogModule } from 'primeng/dialog';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { DropdownModule } from 'primeng/dropdown';
+import { Router } from '@angular/router';
 import { NameInitialsPipe } from '../../name-initials.pipe';
 import { LoginserviceService } from '../service/loginservice.service';
 import { ProductService } from '../service/product.service';
 
 interface Appointment {
+    id: string;
     patientName: string;
+    patientId: string;
     appointmentDate: Date;
+    appointmentTime: string;
     department: string;
     doctor: string;
     status: string;
     reason: string;
+    priority: string;
+    appointmentType: string;
+    patientAge: string;
+    patientGender: string;
+    billingStatus: string;
+    assessmentStatus: string;
+    checkoutStatus: string;
 }
 
 @Component({
-    selector: 'app-AppointmentCreationComponent',
+    selector: 'app-appointment-workflow',
     standalone: true,
-    imports: [CommonModule, InputTextModule, ChipModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, NameInitialsPipe, RadioButtonModule, SelectButtonModule, CalendarModule, InputMaskModule, TableModule, TabsModule, TagModule, DialogModule, InputNumberModule, DropdownModule],
+    imports: [CommonModule, InputTextModule, ChipModule, FluidModule, ButtonModule, SelectModule, FormsModule, TextareaModule, NameInitialsPipe, RadioButtonModule, SelectButtonModule, CalendarModule, InputMaskModule, TableModule, TabsModule, TagModule],
     providers: [ProductService],
     template: `<div class="card">
         <p-tabs value="0">
@@ -47,45 +55,15 @@ interface Appointment {
                         <p-table [value]="appointments" stripedRows>
                             <ng-template pTemplate="header">
                                 <tr>
-                                    <th style="min-width:1rem">
-                                        <div class="flex items-left">
-                                            <p-selectbutton [options]="statusOptions" [(ngModel)]="filterValue" optionLabel="label" optionValue="value" aria-labelledby="basic" (onChange)="onGetType()" />
-                                        </div>
-                                    </th>
+                                    <th style="min-width:1rem">Priority</th>
                                     <th style="min-width:20rem">Patient Name</th>
-                                    <th style="min-width:4rem">
-                                        <div class="flex items-center">
-                                            Date & Time
-                                            <p-columnFilter type="date" field="appointmentDate" display="menu" />
-                                        </div>
-                                    </th>
-                                    <th style="min-width:4rem">
-                                        <div class="flex items-center">
-                                            Department
-                                            <p-columnFilter type="text" field="department" display="menu" />
-                                        </div>
-                                    </th>
-                                    <th style="min-width:4rem">
-                                        <div class="flex items-center">
-                                            Doctor
-                                            <p-columnFilter type="text" field="doctor" display="menu" />
-                                        </div>
-                                    </th>
+                                    <th style="min-width:4rem">Date & Time</th>
+                                    <th style="min-width:4rem">Department</th>
+                                    <th style="min-width:4rem">Doctor</th>
                                     <th style="min-width:4rem">Reason</th>
-                                    <th style="min-width:4rem">
-                                        <div class="flex items-center">
-                                            Status
-                                            <p-columnFilter field="status" matchMode="equals" display="menu">
-                                                <ng-template #filter let-values let-filter="filterCallback">
-                                                    <p-select [(ngModel)]="filterValue" [options]="appointmentStatuses" (onChange)="filter($event.value)" placeholder="Select One" styleClass="w-full">
-                                                        <ng-template let-option #item>
-                                                            <p-tag [value]="option.value" [severity]="option.label == 'Scheduled' ? 'info' : option.label == 'Completed' ? 'success' : 'danger'"></p-tag>
-                                                        </ng-template>
-                                                    </p-select>
-                                                </ng-template>
-                                            </p-columnFilter>
-                                        </div>
-                                    </th>
+                                    <th style="min-width:4rem">Status</th>
+                                    <th style="min-width:4rem">Billing</th>
+                                    <th style="min-width:4rem">Assessment</th>
                                     <th style="min-width:8rem">Actions</th>
                                 </tr>
                             </ng-template>
@@ -118,33 +96,59 @@ interface Appointment {
                                         <div>{{ appointment.appointmentDate | date: 'dd MMM yyyy' }}</div>
                                         <div class="text-sm">{{ appointment.appointmentTime }}</div>
                                     </td>
-                                    <td>
-                                        {{ appointment.department }}
-                                    </td>
-                                    <td>
-                                        {{ appointment.doctor }}
-                                    </td>
-                                    <td>
-                                        {{ appointment.reason }}
-                                    </td>
+                                    <td>{{ appointment.department }}</td>
+                                    <td>{{ appointment.doctor }}</td>
+                                    <td>{{ appointment.reason }}</td>
                                     <td>
                                         <p-tag [value]="appointment.status" [severity]="appointment.status == 'Scheduled' ? 'info' : appointment.status == 'Completed' ? 'success' : 'danger'"></p-tag>
                                     </td>
                                     <td>
-                                        <div class="flex gap-2">
-                                            <button pButton icon="pi pi-dollar" class="p-button-sm p-button-success" 
-                                                    title="Payment Check" 
-                                                    (click)="openPaymentCheck(appointment)"></button>
-                                            <button pButton icon="pi pi-file-edit" class="p-button-sm p-button-info" 
-                                                    title="Assessment" 
-                                                    (click)="openAssessment(appointment)"></button>
+                                        <p-tag [value]="appointment.billingStatus" 
+                                               [severity]="appointment.billingStatus == 'Paid' ? 'success' : appointment.billingStatus == 'Pending' ? 'warn' : 'danger'"></p-tag>
+                                    </td>
+                                    <td>
+                                        <p-tag [value]="appointment.assessmentStatus" 
+                                               [severity]="appointment.assessmentStatus == 'Completed' ? 'success' : appointment.assessmentStatus == 'In Progress' ? 'info' : 'danger'"></p-tag>
+                                    </td>
+                                    <td>
+                                        <div class="flex gap-2 flex-wrap">
+                                            <!-- Billing Button -->
+                                            <button pButton icon="pi pi-dollar" 
+                                                   class="p-button-sm" 
+                                                   [class]="appointment.billingStatus === 'Paid' ? 'p-button-success' : 'p-button-warning'"
+                                                   title="Billing & Payment" 
+                                                   (click)="openBilling(appointment)"
+                                                   [disabled]="appointment.status === 'Cancelled'">
+                                            </button>
+                                            
+                                            <!-- Assessment Button -->
+                                            <button pButton icon="pi pi-file-edit" 
+                                                   class="p-button-sm p-button-info" 
+                                                   title="Patient Assessment" 
+                                                   (click)="openAssessment(appointment)"
+                                                   [disabled]="appointment.billingStatus !== 'Paid' || appointment.status === 'Cancelled'">
+                                            </button>
+                                            
+                                            <!-- Checkout Button -->
+                                            <button pButton icon="pi pi-check-circle" 
+                                                   class="p-button-sm p-button-success" 
+                                                   title="Checkout Patient" 
+                                                   (click)="checkoutPatient(appointment)"
+                                                   [disabled]="appointment.assessmentStatus !== 'Completed' || appointment.checkoutStatus === 'Completed'"
+                                                   *ngIf="appointment.assessmentStatus === 'Completed'">
+                                            </button>
+                                            
+                                            <!-- Status Indicators -->
+                                            <span class="checkout-indicator" *ngIf="appointment.checkoutStatus === 'Completed'">
+                                                <i class="pi pi-check text-green-500" title="Checked Out"></i>
+                                            </span>
                                         </div>
                                     </td>
                                 </tr>
                             </ng-template>
                             <ng-template #emptymessage>
                                 <tr>
-                                    <td colspan="8" class="text-center">No Appointments found.</td>
+                                    <td colspan="10" class="text-center">No Appointments found.</td>
                                 </tr>
                             </ng-template>
                         </p-table>
@@ -244,193 +248,27 @@ interface Appointment {
                 </p-tabpanel>
             </p-tabpanels>
         </p-tabs>
-
-        <!-- Payment Check Dialog -->
-        <p-dialog header="Payment Check - {{selectedAppointment?.patientName}}" [(visible)]="showPaymentDialog" [modal]="true" [style]="{width: '50vw'}">
-            <div class="flex flex-col gap-4">
-                <div class="flex justify-content-between">
-                    <span class="font-semibold">Payment Status:</span>
-                    <p-tag [value]="paymentStatus" [severity]="paymentStatus == 'Paid' ? 'success' : paymentStatus == 'Partial' ? 'warn' : 'danger'"></p-tag>
-                </div>
-                <div class="flex justify-content-between">
-                    <span>Total Amount:</span>
-                    <span class="font-semibold">{{ totalAmount | currency }}</span>
-                </div>
-                <div class="flex justify-content-between">
-                    <span>Paid Amount:</span>
-                    <span class="font-semibold">{{ paidAmount | currency }}</span>
-                </div>
-                <div class="flex justify-content-between">
-                    <span>Balance:</span>
-                    <span class="font-semibold">{{ (totalAmount - paidAmount) | currency }}</span>
-                </div>
-                <div class="flex gap-2 mt-4">
-                    <button pButton label="Mark as Paid" class="p-button-success p-button-sm" (click)="markAsPaid()"></button>
-                    <button pButton label="Checkout" class="p-button-info p-button-sm" (click)="proceedToCheckout()"></button>
-                    <button pButton label="Close" class="p-button-secondary p-button-sm" (click)="closePaymentDialog()"></button>
-                </div>
-            </div>
-        </p-dialog>
-
-        <!-- Assessment Dialog -->
-        <p-dialog header="Patient Assessment - {{selectedAppointment?.patientName}}" [(visible)]="showAssessmentDialog" [modal]="true" [style]="{width: '90vw', height: '90vh'}" [maximizable]="true">
-            <div class="assessment-content" style="height: 70vh; overflow-y: auto;">
-                <p-tabs value="0">
-                    <p-tablist>
-                        <p-tab value="0">Vitals & History</p-tab>
-                        <p-tab value="1">Assessment & Plan</p-tab>
-                        <p-tab value="2">Medications & Tests</p-tab>
-                    </p-tablist>
-                    <p-tabpanels>
-                        <!-- Vitals & History Tab -->
-                        <p-tabpanel value="0">
-                            <div class="flex flex-col gap-6 mt-4">
-                                <div class="font-semibold text-lg">Vital Signs</div>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Blood Pressure (mmHg)</label>
-                                        <input pInputText [(ngModel)]="vitals.bloodPressure" placeholder="120/80" />
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Heart Rate (BPM)</label>
-                                        <p-inputNumber [(ngModel)]="vitals.heartRate" [min]="0" placeholder="72"></p-inputNumber>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Temperature (°F)</label>
-                                        <p-inputNumber [(ngModel)]="vitals.temperature" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="98.6"></p-inputNumber>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Respiratory Rate</label>
-                                        <p-inputNumber [(ngModel)]="vitals.respiratoryRate" [min]="0" placeholder="16"></p-inputNumber>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Weight (kg)</label>
-                                        <p-inputNumber [(ngModel)]="vitals.weight" [minFractionDigits]="1" [maxFractionDigits]="1" placeholder="70.0"></p-inputNumber>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Height (cm)</label>
-                                        <p-inputNumber [(ngModel)]="vitals.height" [min]="0" placeholder="170"></p-inputNumber>
-                                    </div>
-                                </div>
-
-                                <div class="font-semibold text-lg">Past Medical History</div>
-                                <div class="flex flex-wrap">
-                                    <textarea pTextarea [(ngModel)]="pastMedicalHistory" rows="4" placeholder="Enter patient's past medical history, surgeries, chronic conditions..."></textarea>
-                                </div>
-                            </div>
-                        </p-tabpanel>
-
-                        <!-- Assessment & Plan Tab -->
-                        <p-tabpanel value="1">
-                            <div class="flex flex-col gap-6 mt-4">
-                                <div class="font-semibold text-lg">Doctor's Assessment</div>
-                                <div class="flex flex-wrap">
-                                    <textarea pTextarea [(ngModel)]="doctorNotes" rows="4" placeholder="Enter clinical assessment, observations, diagnosis..."></textarea>
-                                </div>
-
-                                <div class="font-semibold text-lg">ICD Codes</div>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Primary ICD Code</label>
-                                        <input pInputText [(ngModel)]="icdCodes.primary" placeholder="E11.9" />
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Secondary ICD Codes</label>
-                                        <input pInputText [(ngModel)]="icdCodes.secondary" placeholder="I10, Z51.11" />
-                                    </div>
-                                </div>
-
-                                <div class="font-semibold text-lg">Advice & Recommendations</div>
-                                <div class="flex flex-wrap">
-                                    <textarea pTextarea [(ngModel)]="advice" rows="4" placeholder="Enter advice for patient, lifestyle modifications, precautions..."></textarea>
-                                </div>
-
-                                <div class="font-semibold text-lg">Follow-up Instructions</div>
-                                <div class="flex flex-col md:flex-row gap-6">
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Follow-up Date</label>
-                                        <p-calendar [(ngModel)]="followUpDate" [showIcon]="true" dateFormat="mm/dd/yy"></p-calendar>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 w-full">
-                                        <label>Follow-up Notes</label>
-                                        <textarea pTextarea [(ngModel)]="followUpNotes" rows="2" placeholder="Follow-up instructions..."></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </p-tabpanel>
-
-                        <!-- Medications & Tests Tab -->
-                        <p-tabpanel value="2">
-                            <div class="flex flex-col gap-6 mt-4">
-                                <div class="font-semibold text-lg">Medications</div>
-                                <div style="max-height: 200px; overflow-y: auto;">
-                                    <p-table [value]="medications">
-                                        <ng-template pTemplate="header">
-                                            <tr>
-                                                <th>Medication</th>
-                                                <th>Dosage</th>
-                                                <th>Frequency</th>
-                                                <th>Duration</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </ng-template>
-                                        <ng-template pTemplate="body" let-med let-i="rowIndex">
-                                            <tr>
-                                                <td><input pInputText [(ngModel)]="med.name" placeholder="Medication name" /></td>
-                                                <td><input pInputText [(ngModel)]="med.dosage" placeholder="500mg" /></td>
-                                                <td><input pInputText [(ngModel)]="med.frequency" placeholder="Twice daily" /></td>
-                                                <td><input pInputText [(ngModel)]="med.duration" placeholder="7 days" /></td>
-                                                <td><button pButton icon="pi pi-trash" class="p-button-sm p-button-danger" (click)="removeMedication(i)"></button></td>
-                                            </tr>
-                                        </ng-template>
-                                    </p-table>
-                                </div>
-                                <button pButton label="Add Medication" icon="pi pi-plus" class="p-button-sm p-button-secondary" (click)="addMedication()"></button>
-
-                                <div class="font-semibold text-lg">Investigations/Tests</div>
-                                <div style="max-height: 200px; overflow-y: auto;">
-                                    <p-table [value]="investigations">
-                                        <ng-template pTemplate="header">
-                                            <tr>
-                                                <th>Test/Investigation</th>
-                                                <th>Urgency</th>
-                                                <th>Notes</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </ng-template>
-                                        <ng-template pTemplate="body" let-inv let-i="rowIndex">
-                                            <tr>
-                                                <td><input pInputText [(ngModel)]="inv.name" placeholder="Blood test, X-Ray, etc." /></td>
-                                                <td>
-                                                    <p-dropdown [(ngModel)]="inv.urgency" [options]="urgencyOptions" placeholder="Select"></p-dropdown>
-                                                </td>
-                                                <td><input pInputText [(ngModel)]="inv.notes" placeholder="Special instructions" /></td>
-                                                <td><button pButton icon="pi pi-trash" class="p-button-sm p-button-danger" (click)="removeInvestigation(i)"></button></td>
-                                            </tr>
-                                        </ng-template>
-                                    </p-table>
-                                </div>
-                                <button pButton label="Add Investigation" icon="pi pi-plus" class="p-button-sm p-button-secondary" (click)="addInvestigation()"></button>
-                            </div>
-                        </p-tabpanel>
-                    </p-tabpanels>
-                </p-tabs>
-            </div>
-            <div class="flex gap-2 mt-4 justify-content-end">
-                <button pButton label="Save Assessment" class="p-button-success" (click)="saveAssessment()"></button>
-                <button pButton label="Print Prescription" class="p-button-info" (click)="printPrescription()"></button>
-                <button pButton label="Close" class="p-button-secondary" (click)="closeAssessmentDialog()"></button>
-            </div>
-        </p-dialog>
-    </div>`
+    </div>`,
+    styles: [`
+        .checkout-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+        
+        .gap-2 > * {
+            margin: 0.25rem;
+        }
+    `]
 })
-export class AppointmentCreationComponent implements OnInit {
+export class AppointmentWorkflowComponent implements OnInit {
     public _productService = inject(ProductService);
     public loginService = inject(LoginserviceService);
+    private router = inject(Router);
 
     statusOptions: any[] = [
         { label: 'All', value: 'all' },
@@ -440,7 +278,7 @@ export class AppointmentCreationComponent implements OnInit {
     ];
     
     filterValue: string = 'all';
-    appointments: any = [];
+    appointments: Appointment[] = [];
     
     appointmentStatuses: any[] = [
         { label: 'Scheduled', value: 'Scheduled' },
@@ -450,19 +288,14 @@ export class AppointmentCreationComponent implements OnInit {
     ];
 
     patients: any[] = [
-        { name: 'John Doe', value: 'john-doe' },
-        { name: 'Jane Smith', value: 'jane-smith' },
-        { name: 'Ahmed Khan', value: 'ahmed-khan' }
+        { name: 'John Doe', value: 'john-doe', id: 'PT001' },
+        { name: 'Jane Smith', value: 'jane-smith', id: 'PT002' },
+        { name: 'Ahmed Khan', value: 'ahmed-khan', id: 'PT003' }
     ];
 
     appointmentTypes: string[] = ['Consultation', 'Follow-up', 'Emergency', 'Surgery', 'Checkup'];
     departments: string[] = ['Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics', 'General Medicine'];
     doctors: string[] = ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams', 'Dr. Brown', 'Dr. Davis'];
-    urgencyOptions: any[] = [
-        { label: 'Routine', value: 'Routine' },
-        { label: 'Urgent', value: 'Urgent' },
-        { label: 'STAT', value: 'STAT' }
-    ];
 
     // Form fields
     selectedPatient: any;
@@ -478,55 +311,78 @@ export class AppointmentCreationComponent implements OnInit {
     roomNumber: string = '';
     notes: string = '';
 
-    // Dialog states
-    showPaymentDialog: boolean = false;
-    showAssessmentDialog: boolean = false;
-    selectedAppointment: any = null;
-
-    // Payment fields
-    paymentStatus: string = 'Unpaid';
-    totalAmount: number = 150;
-    paidAmount: number = 0;
-
-    // Assessment fields
-    vitals: any = {
-        bloodPressure: '',
-        heartRate: null,
-        temperature: null,
-        respiratoryRate: null,
-        weight: null,
-        height: null
-    };
-    pastMedicalHistory: string = '';
-    doctorNotes: string = '';
-    icdCodes: any = {
-        primary: '',
-        secondary: ''
-    };
-    advice: string = '';
-    followUpDate: Date | undefined;
-    followUpNotes: string = '';
-    medications: any[] = [{ name: '', dosage: '', frequency: '', duration: '' }];
-    investigations: any[] = [{ name: '', urgency: '', notes: '' }];
-
     public filteredAppointments: any;
 
+    // Navigation Methods
+    openBilling(appointment: Appointment): void {
+        this.router.navigate(['/home/hms/billing'], {
+            queryParams: {
+                from: 'appointment',
+                appointmentId: appointment.id,
+                patientName: appointment.patientName,
+                patientId: appointment.patientId,
+                department: appointment.department,
+                doctor: appointment.doctor,
+                appointmentDate: appointment.appointmentDate.toISOString()
+            }
+        });
+    }
+
+    openAssessment(appointment: Appointment): void {
+        if (appointment.billingStatus !== 'Paid') {
+            alert('Please complete billing before proceeding to assessment!');
+            return;
+        }
+
+        this.router.navigate(['/home/hms/assessment'], {
+            queryParams: {
+                from: 'appointment',
+                appointmentId: appointment.id,
+                patientName: appointment.patientName,
+                patientId: appointment.patientId,
+                department: appointment.department,
+                doctor: appointment.doctor,
+                appointmentDate: appointment.appointmentDate.toISOString()
+            }
+        });
+    }
+
+    checkoutPatient(appointment: Appointment): void {
+        if (appointment.assessmentStatus !== 'Completed') {
+            alert('Please complete patient assessment before checkout!');
+            return;
+        }
+
+        // Update appointment status
+        const appointmentIndex = this.appointments.findIndex(a => a.id === appointment.id);
+        if (appointmentIndex !== -1) {
+            this.appointments[appointmentIndex].checkoutStatus = 'Completed';
+            this.appointments[appointmentIndex].status = 'Completed';
+            this.filteredAppointments = JSON.stringify(this.appointments);
+            
+            alert(`Patient ${appointment.patientName} has been successfully checked out!`);
+        }
+    }
+
+    // Appointment Creation Methods
     createAppointment(): void {
-        const newAppointment = {
+        const newAppointment: Appointment = {
+            id: 'APT-' + Math.floor(Math.random() * 10000),
             patientName: this.selectedPatient?.name || '',
-            appointmentDate: this.appointmentDate,
+            patientId: this.selectedPatient?.id || '',
+            appointmentDate: this.appointmentDate!,
             appointmentTime: this.appointmentTime ? this.appointmentTime.toLocaleTimeString() : '',
             department: this.department,
             doctor: this.doctor,
             reason: this.reason,
             priority: this.priority,
             status: this.status,
-            duration: this.duration,
-            roomNumber: this.roomNumber,
-            notes: this.notes,
             appointmentType: this.appointmentType,
-            patientAge: '32 Y 5 M',
-            patientGender: 'Male'
+            patientAge: '32 Y 5 M', // This would come from patient data
+            patientGender: 'Male', // This would come from patient data
+            billingStatus: 'Unpaid',
+            assessmentStatus: 'Pending',
+            checkoutStatus: 'Pending'
         };
         
         this.appointments.push(newAppointment);
@@ -535,109 +391,11 @@ export class AppointmentCreationComponent implements OnInit {
         this.resetForm();
     }
 
-    // Payment Dialog Methods
-    openPaymentCheck(appointment: any): void {
-        this.selectedAppointment = appointment;
-        this.showPaymentDialog = true;
-        // Mock payment data - replace with actual API call
-        this.paymentStatus = Math.random() > 0.5 ? 'Paid' : 'Unpaid';
-        this.totalAmount = 150;
-        this.paidAmount = this.paymentStatus === 'Paid' ? 150 : 0;
-    }
-
-    markAsPaid(): void {
-        this.paymentStatus = 'Paid';
-        this.paidAmount = this.totalAmount;
-        alert('Payment marked as paid successfully!');
-    }
-
-    proceedToCheckout(): void {
-        alert('Redirecting to checkout...');
-        // Implement checkout logic here
-        this.closePaymentDialog();
-    }
-
-    closePaymentDialog(): void {
-        this.showPaymentDialog = false;
-        this.selectedAppointment = null;
-    }
-
-    // Assessment Dialog Methods
-    openAssessment(appointment: any): void {
-        this.selectedAppointment = appointment;
-        this.showAssessmentDialog = true;
-        this.resetAssessmentForm();
-    }
-
-    addMedication(): void {
-        this.medications.push({ name: '', dosage: '', frequency: '', duration: '' });
-    }
-
-    removeMedication(index: number): void {
-        this.medications.splice(index, 1);
-    }
-
-    addInvestigation(): void {
-        this.investigations.push({ name: '', urgency: '', notes: '' });
-    }
-
-    removeInvestigation(index: number): void {
-        this.investigations.splice(index, 1);
-    }
-
-    saveAssessment(): void {
-        const assessmentData = {
-            appointment: this.selectedAppointment,
-            vitals: this.vitals,
-            pastMedicalHistory: this.pastMedicalHistory,
-            doctorNotes: this.doctorNotes,
-            icdCodes: this.icdCodes,
-            advice: this.advice,
-            followUpDate: this.followUpDate,
-            followUpNotes: this.followUpNotes,
-            medications: this.medications,
-            investigations: this.investigations
-        };
-        
-        console.log('Assessment Data:', assessmentData);
-        alert('Assessment saved successfully!');
-        this.closeAssessmentDialog();
-    }
-
-    printPrescription(): void {
-        alert('Prescription printed successfully!');
-        // Implement print prescription logic
-    }
-
-    closeAssessmentDialog(): void {
-        this.showAssessmentDialog = false;
-        this.selectedAppointment = null;
-    }
-
-    resetAssessmentForm(): void {
-        this.vitals = {
-            bloodPressure: '',
-            heartRate: null,
-            temperature: null,
-            respiratoryRate: null,
-            weight: null,
-            height: null
-        };
-        this.pastMedicalHistory = '';
-        this.doctorNotes = '';
-        this.icdCodes = { primary: '', secondary: '' };
-        this.advice = '';
-        this.followUpDate = undefined;
-        this.followUpNotes = '';
-        this.medications = [{ name: '', dosage: '', frequency: '', duration: '' }];
-        this.investigations = [{ name: '', urgency: '', notes: '' }];
-    }
-
-    cancel() {
+    cancel(): void {
         this.resetForm();
     }
 
-    resetForm() {
+    resetForm(): void {
         this.selectedPatient = null;
         this.appointmentType = '';
         this.appointmentDate = undefined;
@@ -652,7 +410,7 @@ export class AppointmentCreationComponent implements OnInit {
         this.notes = '';
     }
 
-    onGetType() {
+    onGetType(): void {
         if (this.filterValue === 'all') {
             this.appointments = [...JSON.parse(this.filteredAppointments || '[]')];
         } else {
@@ -675,10 +433,12 @@ export class AppointmentCreationComponent implements OnInit {
     }
 
     async ngOnInit() {
-        // Static sample data - replace with your API call
-        const sampleAppointments = [
+        // Sample appointments with workflow status
+        const sampleAppointments: Appointment[] = [
             {
+                id: 'APT-1001',
                 patientName: 'John Doe',
+                patientId: 'PT001',
                 appointmentDate: new Date('2024-01-15'),
                 appointmentTime: '10:00 AM',
                 department: 'Cardiology',
@@ -688,20 +448,46 @@ export class AppointmentCreationComponent implements OnInit {
                 status: 'Scheduled',
                 appointmentType: 'Consultation',
                 patientAge: '45 Y 2 M',
-                patientGender: 'Male'
+                patientGender: 'Male',
+                billingStatus: 'Unpaid',
+                assessmentStatus: 'Pending',
+                checkoutStatus: 'Pending'
             },
             {
+                id: 'APT-1002',
                 patientName: 'Jane Smith',
+                patientId: 'PT002',
                 appointmentDate: new Date('2024-01-16'),
                 appointmentTime: '2:30 PM',
                 department: 'Neurology',
                 doctor: 'Dr. Johnson',
                 reason: 'Follow-up visit',
                 priority: 'High',
-                status: 'Completed',
+                status: 'Scheduled',
                 appointmentType: 'Follow-up',
                 patientAge: '38 Y 7 M',
-                patientGender: 'Female'
+                patientGender: 'Female',
+                billingStatus: 'Paid',
+                assessmentStatus: 'Completed',
+                checkoutStatus: 'Pending'
+            },
+            {
+                id: 'APT-1003',
+                patientName: 'Ahmed Khan',
+                patientId: 'PT003',
+                appointmentDate: new Date('2024-01-17'),
+                appointmentTime: '9:00 AM',
+                department: 'Orthopedics',
+                doctor: 'Dr. Williams',
+                reason: 'Knee pain consultation',
+                priority: 'Low',
+                status: 'Completed',
+                appointmentType: 'Consultation',
+                patientAge: '55 Y 3 M',
+                patientGender: 'Male',
+                billingStatus: 'Paid',
+                assessmentStatus: 'Completed',
+                checkoutStatus: 'Completed'
             }
         ];
         
